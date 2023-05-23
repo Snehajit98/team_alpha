@@ -2,7 +2,11 @@ var db = window.openDatabase("itemDB","1.0","itemDB",65535);
 var sql =""
 
 $(function(){
-$("#excel").click(function(){var files = document.getElementById('file_upload').files;
+
+    
+$("#excel").click(function()
+
+{var files = document.getElementById('file_upload').files;
 if(files.length==0){
   alert("Please choose any file...");
   return;
@@ -16,7 +20,8 @@ if (extension == '.XLS' || extension == '.XLSX') {
     alert("Please select a valid excel file.");
 } });
  
- // Method to read excel file and convert it into JSON 
+ // Method to read excel file and convert it into JSON
+
   function excelFileToJSON(file){
       try {
         var reader = new FileReader();
@@ -31,8 +36,6 @@ if (extension == '.XLS' || extension == '.XLSX') {
             var firstSheetName = workbook.SheetNames[0];
             //reading only first sheet data
             var jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName]);
-            console.log(jsonData);
-            //displaying the json result into HTML table
             displayJsonToHtmlTable(jsonData);
             }
         }catch(e){
@@ -42,58 +45,61 @@ if (extension == '.XLS' || extension == '.XLSX') {
   
  // Method to display the data in HTML Table
   function displayJsonToHtmlTable(jsonData){
+    console.log(jsonData)
+    if(jsonData.length>0){
+    for(var i=0;i<jsonData.length;i++)(function(i){
+        var row_xl=jsonData[i];
+       
+            db.transaction(function(transaction){
+            sql = "SELECT * FROM items WHERE item LIKE '%"+row_xl["UMC No."]+"%' ORDER BY id ASC";
+            
+            //runs perfectly upto this point 
+            transaction.executeSql(sql, undefined,function(transaction,result){
+                  
+                if(result.rows.length){
+                    //alert(result.rows.item(0).id) 
+                    alert("hi "+row_xl["Quantity"] +" "+ result.rows.length + " " )
 
-    db.transaction(function(transaction){
-        if(jsonData.length>0){
+                    var row = result.rows.item(0); //as there is only single row iterareted by predecessor for() loop, rows.item(i) doesn't work. only rows,item(0) works 
+                    var id = row.id;
+                    var quantity = Number(row.quantity)+Number(row_xl["Quantity"]);
+   
+                    db.transaction(function(transaction){
+                        sql = "UPDATE items SET quantity = "+quantity+" WHERE id ="+id+""
+                        transaction.executeSql(sql,[])
+                        });
+                        $("#fetch").click()
 
-        for(var i=0;i<jsonData.length;i++){
-
-            var json_row=jsonData[i];
-
-            var item_input = json_row["UMC No."];
-            var qty_input = json_row["Quantity"];
-
-
-        sql = "SELECT * FROM items WHERE item LIKE '%"+item_input+"%' ORDER BY id ASC";
-        transaction.executeSql(sql, undefined,function(transaction,result){
-        if(result.rows.length){
-            for(var i=0;i<result.rows.length;i++){
-                var row = result.rows.item(i);
-                var id = row.id;
-                var quantity = Number(row.quantity)+Number(qty_input);
-                sql = "UPDATE items SET quantity = "+quantity+" WHERE id ="+id+""
-                transaction.executeSql(sql,[])
-        }}
-        else {
-          //  db.transaction(function(transaction){
-            alert(item_input)
-            alert(qty_input)
-                sql = "INSERT INTO items(item,quantity) VALUES(?,?)";
-
-                transaction.executeSql(sql,[item_input,qty_input],
-                function(){//alert("item added successfully")
-                },
-                function(transaction,err){alert(//err.message//
-                "No Database Found. Create a database first")});
-
-          //  });
-
-
-        }
-    },function(transaction,err){
-            alert(err.message);
-        });   
-
-
-      
-
-
-        }
-    }
+                }
+                else{ 
+                    alert(row_xl["Quantity"])
+                    
+                        
+                    db.transaction(function(transaction){
     
-    });
+                        sql = "INSERT INTO items(item,quantity) VALUES(?,?)";
+                        transaction.executeSql(sql,[row_xl["UMC No."],row_xl["Quantity"]],
+                        function(){alert("item added successfully")},
+                        function(transaction,err){alert(//err.message//
+                        "No Database Found. Create a database first")});
+                        $("#fetch").click()
+                        
+                    });
 
+                }
+
+                }
+                ,function(transaction,err){
+                    alert(/*err.message*/"No Database Found");
+                });
+            });       
+        })(i)
     }
+}
     })
 
 	 
+
+
+
+
