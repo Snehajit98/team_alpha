@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "browserify-shim": "^3.8.16",
+    "cors": "^2.8.5",
+    "fs": "^0.0.1-security",
+    "save": "^2.9.0"
+  }
+}
